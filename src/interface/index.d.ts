@@ -8,3 +8,13 @@ export type TGenericErrorResponse = {
     message: string;
     errorSources: TErrorSources;
 };
+
+import { JwtPayload } from 'jsonwebtoken';
+
+declare global {
+    namespace Express {
+        interface Request {
+            user: JwtPayload;
+        }
+    }
+}
