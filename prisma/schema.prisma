@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+//enums 
+enum Role {
+  USER
+  ADMIN
+}
+enum PriceType {
+  FREE
+  PREMIUM
+}
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum PurchaseType {
+  BUY
+  RENT
+  SUBSCRIPTION
+}
+enum ContentStatus {
+  ACTIVE
+  HIDDEN
+  FLAGGED
+}
+enum MediaType {
+  MOVIE
+  SERIES
+}
+enum SubscriptionPlan {
+  FREE
+  MONTHLY
+  YEARLY
+}
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+//models 
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  reviews   Review[]
+  watchlist Watchlist[]
+  purchases Purchase[]
+
+  // ✅ ADD THESE 👇
+  likes     Like[]
+  comments  Comment[]
+}
+
+model Media {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  genre       String[]
+  releaseYear Int
+  director    String
+  cast        String[]
+  platform    String[]
+  priceType   PriceType
+  youtubeLink String
+  createdAt   DateTime @default(now())
+
+  reviews     Review[]
+
+  // ✅ ADD THESE 👇
+  watchlist   Watchlist[]
+  purchases   Purchase[]
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  content   String
+  tags      String[]
+  spoiler   Boolean
+  status    ReviewStatus @default(PENDING)
+
+  userId    String
+  mediaId   String
+
+  user      User   @relation(fields: [userId], references: [id])
+  media     Media  @relation(fields: [mediaId], references: [id])
+
+  likes     Like[]
+  comments  Comment[]
+
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id       String @id @default(uuid())
+
+  userId   String
+  reviewId String
+
+  user     User   @relation(fields: [userId], references: [id])
+  review   Review @relation(fields: [reviewId], references: [id])
+
+  @@unique([userId, reviewId]) // one like per user
+}
+model Comment {
+  id        String  @id @default(uuid())
+  content   String
+
+  userId    String
+  reviewId  String
+  parentId  String?
+
+  user      User    @relation(fields: [userId], references: [id])
+  review    Review  @relation(fields: [reviewId], references: [id])
+
+  parent    Comment? @relation("CommentToComment", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentToComment")
+
+  createdAt DateTime @default(now())
+}
+model Watchlist {
+  id      String @id @default(uuid())
+
+  userId  String
+  mediaId String
+
+  user    User  @relation(fields: [userId], references: [id])
+  media   Media @relation(fields: [mediaId], references: [id])
+
+  @@unique([userId, mediaId])
+}
+
+model Purchase {
+  id        String   @id @default(uuid())
+
+  userId    String
+  mediaId   String
+  type      PurchaseType
+  expiresAt DateTime?
+
+  user      User  @relation(fields: [userId], references: [id])
+  media     Media @relation(fields: [mediaId], references: [id])
+
+  createdAt DateTime @default(now())
+}
