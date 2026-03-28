@@ -15,6 +15,19 @@ const createCheckoutSession = catchAsync(async (req, res) => {
   });
 });
 
+const webhook = catchAsync(async (req, res) => {
+  const sig = req.headers['stripe-signature'] as string;
+  const result = await PaymentService.handleWebhook(sig, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Webhook received',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   createCheckoutSession,
+  webhook,
 };
