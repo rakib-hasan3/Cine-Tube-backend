@@ -10,6 +10,7 @@ const router = Router();
 
 import { AuthRoutes } from '../modules/Auth/auth.route';
 import { UserRoutes } from '../modules/User/user.route';
+import { MediaRoutes } from '../modules/Media/media.route';
 
 const moduleRoutes: TModuleRoutes[] = [
     {
@@ -19,6 +20,10 @@ const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/users',
         route: UserRoutes,
+    },
+    {
+        path: '/media',
+        route: MediaRoutes,
     },
 ];
 

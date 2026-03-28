@@ -79,6 +79,8 @@ model Media {
   priceType   PriceType
   youtubeLink String
   createdAt   DateTime @default(now())
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
 
   reviews     Review[]
 
