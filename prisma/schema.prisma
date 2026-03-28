@@ -65,6 +65,7 @@ model User {
   // ✅ ADD THESE 👇
   likes     Like[]
   comments  Comment[]
+  payments  Payment[]
 }
 
 model Media {
@@ -77,6 +78,7 @@ model Media {
   cast        String[]
   platform    String[]
   priceType   PriceType
+  price       Int      @default(0) // In cents/smallest unit
   youtubeLink String
   createdAt   DateTime @default(now())
   isDeleted   Boolean  @default(false)
@@ -87,6 +89,7 @@ model Media {
   // ✅ ADD THESE 👇
   watchlist   Watchlist[]
   purchases   Purchase[]
+  payments    Payment[]
 }
 
 model Review {
@@ -160,4 +163,22 @@ model Purchase {
   media     Media @relation(fields: [mediaId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  amount          Int
+  currency        String        @default("usd")
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?       @unique
+  sessionId       String?       @unique
+  userId          String
+  mediaId         String?       
+  subscriptionId  String?       
+
+  user            User          @relation(fields: [userId], references: [id])
+  media           Media?        @relation(fields: [mediaId], references: [id])
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }

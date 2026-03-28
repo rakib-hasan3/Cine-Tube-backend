@@ -17,6 +17,7 @@ import { CommentRoutes } from '../modules/Comment/comment.route';
 import { WatchlistRoutes } from '../modules/Watchlist/watchlist.route';
 import { PurchaseRoutes } from '../modules/Purchase/purchase.route';
 
+
 const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/auth',

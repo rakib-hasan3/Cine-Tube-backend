@@ -12,7 +12,7 @@
     "format": "prettier --write ."
   },
   "prisma": {
-    "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
+    "seed": "ts-node-dev --transpile-only prisma/seed.ts"
   },
   "keywords": [
     "express",
@@ -22,9 +22,6 @@
   ],
   "author": "",
   "license": "ISC",
-  "prisma": {
-    "seed": "ts-node-dev --transpile-only prisma/seed.ts"
-  },
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.6.0",
@@ -36,6 +33,7 @@
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
+    "stripe": "^21.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
