@@ -6,7 +6,7 @@ import httpStatus from 'http-status';
 import { TCreateCheckoutSession } from './payment.interface';
 
 const stripe = new Stripe(config.stripe_secret_key as string, {
-  apiVersion: '2025-01-27.acacia',
+  apiVersion: '2025-01-27.acacia' as any,
 });
 
 const createCheckoutSession = async (userId: string, payload: TCreateCheckoutSession) => {
