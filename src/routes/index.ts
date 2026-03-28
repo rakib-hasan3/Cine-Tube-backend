@@ -16,6 +16,7 @@ import { LikeRoutes } from '../modules/Like/like.route';
 import { CommentRoutes } from '../modules/Comment/comment.route';
 import { WatchlistRoutes } from '../modules/Watchlist/watchlist.route';
 import { PurchaseRoutes } from '../modules/Purchase/purchase.route';
+import { PaymentRoutes } from '../modules/Payment/payment.route';
 
 
 const moduleRoutes: TModuleRoutes[] = [
@@ -50,6 +51,10 @@ const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/purchases',
         route: PurchaseRoutes,
+    },
+    {
+        path: '/payments',
+        route: PaymentRoutes,
     },
 ];
 
