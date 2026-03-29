@@ -67,29 +67,27 @@ model User {
   comments  Comment[]
   payments  Payment[]
 }
-
 model Media {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  genre       String[]
-  releaseYear Int
-  director    String
-  cast        String[]
-  platform    String[]
-  priceType   PriceType
-  price       Int      @default(0) // In cents/smallest unit
-  youtubeLink String
-  createdAt   DateTime @default(now())
-  isDeleted   Boolean  @default(false)
-  deletedAt   DateTime?
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  genre        String[]
+  releaseYear  Int
+  director     String
+  cast         String[]
+  platform     String[]
+  priceType    PriceType
+  price        Int       @default(0)
+  youtubeLink  String
+  type         MediaType @default(MOVIE)  
+  createdAt    DateTime  @default(now())
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
 
-  reviews     Review[]
-
-  // ✅ ADD THESE 👇
-  watchlist   Watchlist[]
-  purchases   Purchase[]
-  payments    Payment[]
+  reviews      Review[]
+  watchlist    Watchlist[]
+  purchases    Purchase[]
+  payments     Payment[]
 }
 
 model Review {

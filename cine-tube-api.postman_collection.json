@@ -1,56 +1,34 @@
 {
 	"info": {
 		"_postman_id": "4b6c3826-b8db-4e56-bad5-2fb0d50df0de",
-		"name": "Cine Tube API",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1111111"
+		"name": "CineTube - Master Automated Suite",
+		"description": "Fully automated E2E testing for CineTube Backend. Highlights: Dynamic user generation, Stripe mock flow, and automatic variable chaining.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Auth",
+			"name": "1. Setup & Auth",
 			"item": [
 				{
-					"name": "Register",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"USER\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+					"name": "Register New User",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const timestamp = Date.now();",
+									"pm.collectionVariables.set(\"dynamicEmail\", `user_${timestamp}@test.com`);",
+									"pm.collectionVariables.set(\"dynamicName\", `Automated User ${timestamp}`);"
+								],
+								"type": "text/javascript"
 							}
 						},
-						"url": {
-							"raw": "{{baseUrl}}/auth/register",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login",
-					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"if (pm.response.code === 200) {",
-									"    var jsonData = pm.response.json();",
-									"    if (jsonData.data && jsonData.data.accessToken) {",
-									"        pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
-									"    }",
-									"    if (jsonData.data && jsonData.data.user && jsonData.data.user.id) {",
-									"        pm.collectionVariables.set(\"userId\", jsonData.data.user.id);",
-									"    }",
+									"if (pm.response.code === 201) {",
+									"    pm.test(\"Registration Successful\", () => pm.response.to.have.status(201));",
 									"}"
 								],
 								"type": "text/javascript"
@@ -62,195 +40,205 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"name\": \"{{dynamicName}}\",\n    \"email\": \"{{dynamicEmail}}\",\n    \"password\": \"password123\",\n    \"role\": \"USER\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
-						"url": {
-							"raw": "{{baseUrl}}/auth/login",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
+						"url": { "raw": "{{baseUrl}}/auth/register" }
+					}
 				},
 				{
-					"name": "Refresh Token",
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var data = pm.response.json().data;",
+									"    pm.collectionVariables.set(\"accessToken\", data.accessToken);",
+									"    pm.collectionVariables.set(\"userId\", data.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/auth/refresh-token",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"refresh-token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Me",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{accessToken}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/auth/me",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"auth",
-								"me"
-							]
-						}
-					},
-					"response": []
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{dynamicEmail}}\",\n    \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/auth/login" }
+					}
 				}
 			]
 		},
 		{
-			"name": "Users",
+			"name": "2. Content (Media)",
 			"item": [
 				{
-					"name": "Get All Users",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{accessToken}}",
-								"type": "text"
+					"name": "Create Media",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"mediaId\", pm.response.json().data.id);",
+									"}"
+								],
+								"type": "text/javascript"
 							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/users",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users"
-							]
 						}
-					},
-					"response": []
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Auto Cinema {{dynamicName}}\",\n    \"description\": \"Automated generation test\",\n    \"genre\": [\"Sci-Fi\"],\n    \"releaseYear\": 2024,\n    \"director\": \"AI Bot\",\n    \"cast\": [\"CineBot\"],\n    \"platform\": [\"Web\"],\n    \"priceType\": \"PREMIUM\",\n    \"price\": 1200,\n    \"youtubeLink\": \"https://youtube.com\",\n    \"type\": \"MOVIE\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/media" }
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Interaction (Review & Like)",
+			"item": [
+				{
+					"name": "Submit Review",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"reviewId\", pm.response.json().data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mediaId\": \"{{mediaId}}\",\n    \"rating\": 10,\n    \"content\": \"Amazing automated review\",\n    \"spoiler\": false\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/reviews" }
+					}
 				},
 				{
-					"name": "Get Single User",
+					"name": "Like the Review",
 					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{accessToken}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/users/{{userId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users",
-								"{{userId}}"
-							]
-						}
-					},
-					"response": []
+						"method": "POST",
+						"header": [],
+						"url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}/like" }
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Social (Comments & Watchlist)",
+			"item": [
+				{
+					"name": "Post Comment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reviewId\": \"{{reviewId}}\",\n    \"content\": \"Totally agree with this review!\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/comments" }
+					}
 				},
 				{
-					"name": "Update User",
+					"name": "Add to Watchlist",
 					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{accessToken}}",
-								"type": "text"
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mediaId\": \"{{mediaId}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/watchlist" }
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Checkout & Webhook",
+			"item": [
+				{
+					"name": "Generate Checkout Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var checkoutUrl = pm.response.json().data.checkoutUrl;",
+									"    pm.collectionVariables.set(\"sessionId\", checkoutUrl.split('/').pop());",
+									"}"
+								],
+								"type": "text/javascript"
 							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mediaId\": \"{{mediaId}}\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "{{baseUrl}}/payments/create-session" }
+					}
+				},
+				{
+					"name": "Mock Webhook (Fulfillment)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "stripe-signature", "value": "TEST_SIG" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Updated Name\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
+							"raw": "{\n    \"type\": \"checkout.session.completed\",\n    \"data\": {\n        \"object\": {\n            \"id\": \"{{sessionId}}\",\n            \"payment_status\": \"paid\",\n            \"metadata\": {\n                \"userId\": \"{{userId}}\",\n                \"mediaId\": \"{{mediaId}}\"\n            }\n        }\n    }\n}",
+							"options": { "raw": { "language": "json" } }
 						},
-						"url": {
-							"raw": "{{baseUrl}}/users/{{userId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users",
-								"{{userId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete User",
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "{{accessToken}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/users/{{userId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"users",
-								"{{userId}}"
-							]
-						}
-					},
-					"response": []
+						"url": { "raw": "{{baseUrl}}/payments/webhook" }
+					}
 				}
 			]
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{ "key": "token", "value": "{{accessToken}}", "type": "string" }
+		]
+	},
 	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:5000/api/v1",
-			"type": "string"
-		},
-		{
-			"key": "accessToken",
-			"value": "",
-			"type": "string"
-		},
-		{
-			"key": "userId",
-			"value": "",
-			"type": "string"
-		}
+		{ "key": "baseUrl", "value": "http://localhost:5000/api/v1", "type": "string" },
+		{ "key": "accessToken", "value": "", "type": "string" },
+		{ "key": "userId", "value": "", "type": "string" },
+		{ "key": "mediaId", "value": "", "type": "string" },
+		{ "key": "reviewId", "value": "", "type": "string" },
+		{ "key": "sessionId", "value": "", "type": "string" },
+		{ "key": "dynamicEmail", "value": "", "type": "string" },
+		{ "key": "dynamicName", "value": "", "type": "string" }
 	]
 }
