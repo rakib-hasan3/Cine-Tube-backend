@@ -38,4 +38,13 @@ router.patch(
   ReviewController.updateReviewStatus,
 );
 
+// GET /api/v1/reviews — ADMIN only, returns ALL reviews for moderation
+router.get(
+  '/',
+  auth(),
+  role('ADMIN'),
+  validateRequest(ReviewValidation.getAllReviewsValidationSchema),
+  ReviewController.getAllReviews,
+);
+
 export const ReviewRoutes = router;

@@ -118,10 +118,22 @@ const updateReviewStatus = async (id: string, payload: IReviewStatusUpdate) => {
   return updated;
 };
 
+
+const getAllReviews = async () => {
+  const result = await prisma.review.findMany({
+    include: {
+      user: true,   // ইউজারের নাম দেখানোর জন্য
+      media: true,  // মুভির টাইটেল দেখানোর জন্য
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  return result;
+};
 export const ReviewService = {
   createReview,
   getReviewsByMedia,
   updateReview,
   deleteReview,
   updateReviewStatus,
+  getAllReviews
 };

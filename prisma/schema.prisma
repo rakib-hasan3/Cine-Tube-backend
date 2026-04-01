@@ -79,7 +79,7 @@ model Media {
   id          String    @id @default(uuid())
   title       String
   description String
-  posterUrl   String
+  posterUrl   String?
   backdropUrl String?
   genre       String[]
   releaseYear Int
@@ -191,4 +191,13 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SystemSetting {
+  id                String   @id @default("config") // সবসময় একটাই রো থাকবে
+  siteName          String   @default("CineTube")
+  maintenanceMode   Boolean  @default(false)
+  allowRegistration Boolean  @default(true)
+  contactEmail      String?
+  updatedAt         DateTime @updatedAt
 }

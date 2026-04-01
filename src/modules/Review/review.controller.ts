@@ -71,10 +71,21 @@ const updateReviewStatus = catchAsync(async (req, res) => {
   });
 });
 
+const getAllReviews = catchAsync(async (req, res) => {
+  const result = await ReviewService.getAllReviews();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Reviews fetched successfully',
+    data: result,
+  });
+});
+
 export const ReviewController = {
   createReview,
   getReviewsByMedia,
   updateReview,
   deleteReview,
   updateReviewStatus,
+  getAllReviews
 };

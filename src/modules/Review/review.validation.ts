@@ -29,8 +29,18 @@ const updateReviewStatusValidationSchema = z.object({
   }),
 });
 
+const getAllReviewsValidationSchema = z.object({
+  query: z.object({
+    page: z.string().optional(),
+    limit: z.string().optional(),
+  }),
+});
+
 export const ReviewValidation = {
   createReviewValidationSchema,
   updateReviewValidationSchema,
   updateReviewStatusValidationSchema,
+  getAllReviewsValidationSchema,
 };
+
+
