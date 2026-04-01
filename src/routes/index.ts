@@ -17,6 +17,7 @@ import { CommentRoutes } from '../modules/Comment/comment.route';
 import { WatchlistRoutes } from '../modules/Watchlist/watchlist.route';
 import { PurchaseRoutes } from '../modules/Purchase/purchase.route';
 import { PaymentRoutes } from '../modules/Payment/payment.route';
+import { AdminRoutes } from '../modules/Admin/admin.route';
 
 
 const moduleRoutes: TModuleRoutes[] = [
@@ -27,6 +28,10 @@ const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/users',
         route: UserRoutes,
+    },
+    {
+        path: '/admin',
+        route: AdminRoutes,
     },
     {
         path: '/media',

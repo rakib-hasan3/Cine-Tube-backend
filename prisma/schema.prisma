@@ -194,10 +194,11 @@ model Payment {
 }
 
 model SystemSetting {
-  id                String   @id @default("config") // সবসময় একটাই রো থাকবে
+  id                String   @id @default("config")
   siteName          String   @default("CineTube")
+  siteEmail         String? // আপনার contactEmail এর বদলে এটা দিতে পারেন বা ওটাও রাখতে পারেন
   maintenanceMode   Boolean  @default(false)
   allowRegistration Boolean  @default(true)
-  contactEmail      String?
+  premiumMonthlyFee Float    @default(0) // যদি সাবস্ক্রিপশন ফি কন্ট্রোল করতে চান
   updatedAt         DateTime @updatedAt
 }
