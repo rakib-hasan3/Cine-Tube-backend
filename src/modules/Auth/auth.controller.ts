@@ -4,6 +4,7 @@ import sendResponse from '../../utils/sendResponse';
 import { AuthService } from './auth.service';
 import { TAuthUser } from './auth.interface';
 import config from '../../config';
+import { fa } from 'zod/v4/locales';
 
 const registerUser = catchAsync(async (req, res) => {
   const result = await AuthService.registerUser(req.body);
@@ -24,7 +25,7 @@ const loginUser = catchAsync(async (req, res) => {
   res.cookie('refreshToken', refreshToken, {
     secure: config.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: 'lax',
   });
 
   sendResponse(res, {

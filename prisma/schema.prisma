@@ -12,34 +12,41 @@ enum Role {
   USER
   ADMIN
 }
+
 enum PriceType {
   FREE
   PREMIUM
 }
+
 enum ReviewStatus {
   PENDING
   APPROVED
   REJECTED
 }
+
 enum PurchaseType {
   BUY
   RENT
   SUBSCRIPTION
 }
+
 enum ContentStatus {
   ACTIVE
   HIDDEN
   FLAGGED
 }
+
 enum MediaType {
   MOVIE
   SERIES
 }
+
 enum SubscriptionPlan {
   FREE
   MONTHLY
   YEARLY
 }
+
 enum PaymentStatus {
   PENDING
   SUCCESS
@@ -63,120 +70,123 @@ model User {
   purchases Purchase[]
 
   // ✅ ADD THESE 👇
-  likes     Like[]
-  comments  Comment[]
-  payments  Payment[]
+  likes    Like[]
+  comments Comment[]
+  payments Payment[]
 }
-model Media {
-  id           String    @id @default(uuid())
-  title        String
-  description  String
-  genre        String[]
-  releaseYear  Int
-  director     String
-  cast         String[]
-  platform     String[]
-  priceType    PriceType
-  price        Int       @default(0)
-  youtubeLink  String
-  type         MediaType @default(MOVIE)  
-  createdAt    DateTime  @default(now())
-  isDeleted    Boolean   @default(false)
-  deletedAt    DateTime?
 
-  reviews      Review[]
-  watchlist    Watchlist[]
-  purchases    Purchase[]
-  payments     Payment[]
+model Media {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  genre       String[]
+  releaseYear Int
+  director    String
+  cast        String[]
+  platform    String[]
+  priceType   PriceType
+  price       Int       @default(0)
+  youtubeLink String
+  type        MediaType @default(MOVIE)
+  createdAt   DateTime  @default(now())
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+
+  reviews   Review[]
+  watchlist Watchlist[]
+  purchases Purchase[]
+  payments  Payment[]
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  rating    Int
-  content   String
-  tags      String[]
-  spoiler   Boolean
-  status    ReviewStatus @default(PENDING)
+  id      String       @id @default(uuid())
+  rating  Int
+  content String
+  tags    String[]
+  spoiler Boolean
+  status  ReviewStatus @default(PENDING)
 
-  userId    String
-  mediaId   String
+  userId  String
+  mediaId String
 
-  user      User   @relation(fields: [userId], references: [id])
-  media     Media  @relation(fields: [mediaId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  media Media @relation(fields: [mediaId], references: [id])
 
-  likes     Like[]
-  comments  Comment[]
+  likes    Like[]
+  comments Comment[]
 
   createdAt DateTime @default(now())
 }
 
 model Like {
-  id       String @id @default(uuid())
+  id String @id @default(uuid())
 
   userId   String
   reviewId String
 
-  user     User   @relation(fields: [userId], references: [id])
-  review   Review @relation(fields: [reviewId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  review Review @relation(fields: [reviewId], references: [id])
 
   @@unique([userId, reviewId]) // one like per user
 }
+
 model Comment {
-  id        String  @id @default(uuid())
-  content   String
+  id      String @id @default(uuid())
+  content String
 
-  userId    String
-  reviewId  String
-  parentId  String?
+  userId   String
+  reviewId String
+  parentId String?
 
-  user      User    @relation(fields: [userId], references: [id])
-  review    Review  @relation(fields: [reviewId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  review Review @relation(fields: [reviewId], references: [id])
 
-  parent    Comment? @relation("CommentToComment", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentToComment")
+  parent  Comment?  @relation("CommentToComment", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentToComment")
 
   createdAt DateTime @default(now())
 }
+
 model Watchlist {
-  id      String @id @default(uuid())
+  id String @id @default(uuid())
 
   userId  String
   mediaId String
 
-  user    User  @relation(fields: [userId], references: [id])
-  media   Media @relation(fields: [mediaId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  media Media @relation(fields: [mediaId], references: [id])
 
   @@unique([userId, mediaId])
 }
 
 model Purchase {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
   userId    String
   mediaId   String
   type      PurchaseType
   expiresAt DateTime?
 
-  user      User  @relation(fields: [userId], references: [id])
-  media     Media @relation(fields: [mediaId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  media Media @relation(fields: [mediaId], references: [id])
 
   createdAt DateTime @default(now())
 }
 
 model Payment {
-  id              String        @id @default(uuid())
-  amount          Int
-  currency        String        @default("usd")
-  status          PaymentStatus @default(PENDING)
-  transactionId   String?       @unique
-  sessionId       String?       @unique
-  userId          String
-  mediaId         String?       
-  subscriptionId  String?       
+  id             String        @id @default(uuid())
+  amount         Int
+  currency       String        @default("usd")
+  status         PaymentStatus @default(PENDING)
+  transactionId  String?       @unique
+  sessionId      String?       @unique
+  userId         String
+  mediaId        String?
+  subscriptionId String?
 
-  user            User          @relation(fields: [userId], references: [id])
-  media           Media?        @relation(fields: [mediaId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  media Media? @relation(fields: [mediaId], references: [id])
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
