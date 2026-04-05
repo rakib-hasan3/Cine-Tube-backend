@@ -55,6 +55,11 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum UserStatus {
+  active
+  blocked
+}
+
 //models 
 
 model User {
@@ -73,6 +78,7 @@ model User {
   likes    Like[]
   comments Comment[]
   payments Payment[]
+  status   UserStatus @default(active)
 }
 
 model Media {

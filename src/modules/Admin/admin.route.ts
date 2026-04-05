@@ -21,4 +21,6 @@ router.patch(
     AdminController.updateSettings
 );
 
+router.get('/stats', AdminController.getAdminStats);
+
 export const AdminRoutes = router;

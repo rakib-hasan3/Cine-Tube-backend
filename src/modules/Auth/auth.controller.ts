@@ -36,13 +36,17 @@ const loginUser = catchAsync(async (req, res) => {
   });
 });
 
+// auth.controller.ts
+// auth.controller.ts
 const getMe = catchAsync(async (req, res) => {
-  const result = await AuthService.getMe(req.user as TAuthUser);
+  // এখানে Type Casting করে দিতে হবে (as TAuthUser)
+  const user = req.user as TAuthUser;
+  const result = await AuthService.getMe(user);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: 'Profile retrieved successfully',
+    message: 'User profile retrieved successfully',
     data: result,
   });
 });
@@ -57,9 +61,28 @@ const refreshToken = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
+const logoutUser = catchAsync(async (req, res) => {
+  // await AuthService.logoutUser(); 
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+    path: '/',
+  });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'User logged out successfully',
+    data: null,
+  });
+});
 export const AuthController = {
   registerUser,
   loginUser,
   getMe,
-  refreshToken
+  refreshToken,
+  logoutUser
 };

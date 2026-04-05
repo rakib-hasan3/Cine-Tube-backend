@@ -5,6 +5,7 @@ import AppError from '../../errors/AppError';
 import { prisma } from '../../lib/prisma';
 import { createToken, verifyToken } from './auth.utils';
 import { TAuthUser, TLoginUser } from './auth.interface';
+import sendResponse from '../../utils/sendResponse';
 
 const registerUser = async (payload: any) => {
     const isExistUser = await prisma.user.findUnique({
@@ -85,6 +86,11 @@ const loginUser = async (payload: TLoginUser) => {
 };
 
 const getMe = async (jwtPayload: TAuthUser) => {
+    // সেফটি চেক: যদি jwtPayload-ই না থাকে
+    if (!jwtPayload || !jwtPayload.email) {
+        throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token payload!');
+    }
+
     const user = await prisma.user.findUnique({
         where: {
             email: jwtPayload.email,
@@ -95,11 +101,12 @@ const getMe = async (jwtPayload: TAuthUser) => {
             email: true,
             role: true,
             createdAt: true,
+            // এখানে avatar বা অন্য কিছু থাকলে যোগ করতে পারেন
         },
     });
 
     if (!user) {
-        throw new AppError(httpStatus.NOT_FOUND, 'User not found!');
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found in database!');
     }
 
     return user;
@@ -140,5 +147,6 @@ export const AuthService = {
     registerUser,
     loginUser,
     getMe,
-    refreshToken
+    refreshToken,
+    sendResponse
 };

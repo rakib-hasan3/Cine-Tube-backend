@@ -64,9 +64,9 @@ const updateReviewStatus = catchAsync(async (req, res) => {
   const result = await ReviewService.updateReviewStatus(id as string, req.body);
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: 200,
     success: true,
-    message: 'Review status updated successfully',
+    message: "Review status updated successfully",
     data: result,
   });
 });

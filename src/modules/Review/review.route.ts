@@ -43,8 +43,7 @@ router.get(
   '/',
   auth(),
   role('ADMIN'),
-  validateRequest(ReviewValidation.getAllReviewsValidationSchema),
+
   ReviewController.getAllReviews,
 );
-
 export const ReviewRoutes = router;

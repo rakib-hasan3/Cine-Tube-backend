@@ -9,7 +9,7 @@ import catchAsync from '../utils/catchAsync';
 const auth = (...requiredRoles: string[]) => {
     return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
         const authHeader = req.headers.authorization;
-        
+
         let token;
         if (authHeader && authHeader.startsWith('Bearer ')) {
             token = authHeader.split(' ')[1];
@@ -21,10 +21,24 @@ const auth = (...requiredRoles: string[]) => {
             throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized!');
         }
 
-        const decoded = jwt.verify(
-            token,
-            config.jwt_access_secret as string,
-        ) as JwtPayload;
+        // ✅ safer verify
+        let decoded: JwtPayload;
+
+        try {
+            decoded = jwt.verify(
+                token,
+                config.jwt_access_secret as string
+            ) as JwtPayload;
+        } catch (err) {
+            throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token!');
+        }
+
+        // ✅ EXTRA SAFETY
+        if (!decoded || !decoded.email) {
+            throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token payload!');
+        }
+
+        console.log("DECODED 👉", decoded);
 
         const { role, email } = decoded;
 
@@ -36,16 +50,21 @@ const auth = (...requiredRoles: string[]) => {
             throw new AppError(httpStatus.NOT_FOUND, 'This user is not found!');
         }
 
-        if (requiredRoles && requiredRoles.length > 0 && !requiredRoles.includes(role)) {
+        if (
+            requiredRoles &&
+            requiredRoles.length > 0 &&
+            !requiredRoles.includes(role)
+        ) {
             throw new AppError(
                 httpStatus.FORBIDDEN,
-                'You do not have permission to access this route',
+                'You do not have permission to access this route'
             );
         }
 
+        // 🔥 MOST IMPORTANT
         req.user = decoded;
+
         next();
     });
 };
-
 export default auth;
