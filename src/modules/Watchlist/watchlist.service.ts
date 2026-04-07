@@ -39,6 +39,8 @@ const getWatchlist = async (userId: string) => {
           releaseYear: true,
           priceType: true,
           youtubeLink: true,
+          posterUrl: true,
+          isDeleted: true,
         },
       },
     },

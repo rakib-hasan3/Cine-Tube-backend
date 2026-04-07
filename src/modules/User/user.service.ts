@@ -4,9 +4,7 @@ import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import { PrismaClient, UserStatus } from '../../../generated/prisma/client';
-
 const getAllUsers = async (query: Record<string, unknown>) => {
-  // basic pagination and search, you could use queryBuilder here if implemented
   const searchTerm = query.searchTerm as string;
   let whereConditions = {};
 
@@ -28,6 +26,8 @@ const getAllUsers = async (query: Record<string, unknown>) => {
       name: true,
       email: true,
       role: true,
+      subscription: true, // ✅ নতুন যোগ করা হলো
+      planExpiresAt: true, // ✅ নতুন যোগ করা হলো
       createdAt: true,
     },
   });
@@ -43,6 +43,8 @@ const getSingleUser = async (id: string) => {
       name: true,
       email: true,
       role: true,
+      subscription: true, // ✅ এটি ফ্রন্টএন্ডের 'undefined' সমস্যা দূর করবে
+      planExpiresAt: true, // ✅ এটিও যোগ করে দিন
       createdAt: true,
     },
   });
@@ -63,7 +65,6 @@ const updateUser = async (id: string, payload: any) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // Prevent updating password via this route
   if (payload.password) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Cannot update password here');
   }
@@ -76,6 +77,8 @@ const updateUser = async (id: string, payload: any) => {
       name: true,
       email: true,
       role: true,
+      subscription: true, // ✅ আপডেট করার পর যাতে ফ্রন্টএন্ড নতুন স্ট্যাটাস পায়
+      planExpiresAt: true,
       createdAt: true,
     },
   });

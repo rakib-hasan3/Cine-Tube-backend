@@ -24,4 +24,8 @@ router.post(
 );
 router.get('/me', auth(), AuthController.getMe);
 
+router.post(
+  '/logout',
+  AuthController.logoutUser // এই ফাংশনটি আমরা কন্ট্রোলারে বানাবো
+);
 export const AuthRoutes = router;

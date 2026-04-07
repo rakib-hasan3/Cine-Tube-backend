@@ -3,48 +3,36 @@ import AppError from '../../errors/AppError';
 import { prisma } from '../../lib/prisma';
 import { IPurchase } from './purchase.interface';
 
-// POST /api/v1/purchases
+// purchase.service.ts
+
 const createPurchase = async (userId: string, payload: IPurchase) => {
-  const media = await prisma.media.findUnique({ where: { id: payload.mediaId } });
-  if (!media || media.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Media not found');
-  }
+  // ১. মেয়াদের হিসাব (আজ থেকে ৩০ দিন)
+  const expiryDate = new Date();
+  expiryDate.setMonth(expiryDate.getMonth() + 1);
 
-  // Cannot purchase free media
-  if (media.priceType === 'FREE') {
-    throw new AppError(httpStatus.BAD_REQUEST, 'This media is free and does not require purchase');
-  }
+  return await prisma.$transaction(async (tx) => {
+    // ২. পারচেজ রেকর্ড তৈরি
+    const purchase = await tx.purchase.create({
+      data: {
+        userId,
+        type: 'SUBSCRIPTION', // আপনার Enum অনুযায়ী
+        mediaId: null,        // গ্লোবাল এক্সেসের জন্য এটা null
+        expiresAt: expiryDate,
+      }
+    });
 
-  // Prevent duplicate non-expired purchases
-  const now = new Date();
-  const existingPurchase = await prisma.purchase.findFirst({
-    where: {
-      userId,
-      mediaId: payload.mediaId,
-      type: payload.type,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-    },
+    // ৩. ইউজারের প্রোফাইল আপডেট (Global Access)
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        subscription: payload.subscriptionPlan as any, // 'PREMIUM', 'FAMILY' ইত্যাদি
+        planExpiresAt: expiryDate
+      }
+    });
+
+    return purchase;
   });
-
-  if (existingPurchase) {
-    throw new AppError(httpStatus.CONFLICT, 'You already have an active purchase for this media');
-  }
-
-  const purchase = await prisma.purchase.create({
-    data: {
-      userId,
-      mediaId: payload.mediaId,
-      type: payload.type,
-      expiresAt: payload.expiresAt ?? null,
-    },
-    include: {
-      media: { select: { id: true, title: true } },
-    },
-  });
-
-  return purchase;
 };
-
 // GET /api/v1/purchases  — user's purchase history
 const getPurchaseHistory = async (userId: string, query: Record<string, unknown>) => {
   const page = Number(query.page) || 1;
@@ -95,8 +83,31 @@ const getAllPurchases = async (query: Record<string, unknown>) => {
   };
 };
 
+const canUserWatch = async (userId: string, mediaId: string) => {
+  const [user, media] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.media.findUnique({ where: { id: mediaId } })
+  ]);
+
+  // ১. মুভি ফ্রি হলে সবাই দেখবে
+  if (media?.priceType === 'FREE') return true;
+
+  // ২. ইউজারের যদি একটিভ সাবস্ক্রিপশন থাকে (Global Access)
+  if (user?.subscription !== 'FREE' && user?.planExpiresAt && user.planExpiresAt > new Date()) {
+    return true;
+  }
+
+  // ৩. ইউজার যদি এই নির্দিষ্ট মুভিটি আলাদাভাবে কিনে থাকে
+  const hasPurchased = await prisma.purchase.findFirst({
+    where: { userId, mediaId, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
+  });
+
+  return !!hasPurchased;
+};
+
 export const PurchaseService = {
   createPurchase,
   getPurchaseHistory,
   getAllPurchases,
+  canUserWatch,
 };

@@ -19,14 +19,21 @@ const registerUser = catchAsync(async (req, res) => {
 
 const loginUser = catchAsync(async (req, res) => {
   const result = await AuthService.loginUser(req.body);
+  const { refreshToken, accessToken } = result;
 
-  const { refreshToken, accessToken, user } = result;
-
-  res.cookie('refreshToken', refreshToken, {
+  // কুকি অপশনগুলো এক জায়গায় রাখা ভালো যাতে ভুল না হয়
+  const cookieOptions = {
     secure: config.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax',
-  });
+    sameSite: 'lax' as const, // এখানে lax দিলে লগআউটেও lax দিতে হবে
+    path: '/',
+  };
+
+  // ১. Refresh Token সেট করা
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  // ২. যদি Access Token-ও কুকিতে পাঠাতে চান তবে নিচের লাইনটি আনকমেন্ট করুন
+  // res.cookie('accessToken', accessToken, cookieOptions);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -61,21 +68,21 @@ const refreshToken = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
 const logoutUser = catchAsync(async (req, res) => {
-  // await AuthService.logoutUser(); 
-
-  res.clearCookie('refreshToken', {
+  // একদম মিনিমাল অপশন - লোকালহোস্টের জন্য এটাই বেস্ট
+  const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
+    secure: false, // লোকালহোস্টে অবশ্যই false রাখবেন
     path: '/',
-  });
+  };
+
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'User logged out successfully',
+    message: 'Logged out successfully!',
     data: null,
   });
 });

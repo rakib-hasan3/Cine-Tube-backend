@@ -5,7 +5,6 @@ import AppError from '../../errors/AppError';
 import { prisma } from '../../lib/prisma';
 import { createToken, verifyToken } from './auth.utils';
 import { TAuthUser, TLoginUser } from './auth.interface';
-import sendResponse from '../../utils/sendResponse';
 
 const registerUser = async (payload: any) => {
     const isExistUser = await prisma.user.findUnique({
@@ -22,6 +21,7 @@ const registerUser = async (payload: any) => {
     );
 
     const newUser = await prisma.user.create({
+        // @ts-ignore
         data: {
             ...payload,
             password: hashedPassword,
@@ -31,6 +31,7 @@ const registerUser = async (payload: any) => {
             name: true,
             email: true,
             role: true,
+            subscription: true, // ✅ নতুন যোগ করা হলো
             createdAt: true,
         },
     });
@@ -79,6 +80,7 @@ const loginUser = async (payload: TLoginUser) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            subscription: user.subscription, // ✅ এখন লগইন করার সাথে সাথেই ফ্রন্টএন্ড স্ট্যাটাস পাবে
         },
         accessToken,
         refreshToken
@@ -86,7 +88,6 @@ const loginUser = async (payload: TLoginUser) => {
 };
 
 const getMe = async (jwtPayload: TAuthUser) => {
-    // সেফটি চেক: যদি jwtPayload-ই না থাকে
     if (!jwtPayload || !jwtPayload.email) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token payload!');
     }
@@ -100,8 +101,9 @@ const getMe = async (jwtPayload: TAuthUser) => {
             name: true,
             email: true,
             role: true,
+            subscription: true,    // ✅ ফ্রন্টএন্ড বাটন সবুজ করার জন্য এটিই প্রধান ভূমিকা রাখবে
+            planExpiresAt: true,   // ✅ এক্সপায়ারি ডেটও পাঠিয়ে দিচ্ছি
             createdAt: true,
-            // এখানে avatar বা অন্য কিছু থাকলে যোগ করতে পারেন
         },
     });
 
@@ -111,13 +113,11 @@ const getMe = async (jwtPayload: TAuthUser) => {
 
     return user;
 };
-const refreshToken = async (token: string) => {
-    // checking if the given token is valid
-    const decoded = verifyToken(token, config.jwt_refresh_secret as string);
 
+const refreshToken = async (token: string) => {
+    const decoded = verifyToken(token, config.jwt_refresh_secret as string);
     const { email } = decoded;
 
-    // checking if the user exists
     const user = await prisma.user.findUnique({
         where: { email: email },
     });
@@ -147,6 +147,5 @@ export const AuthService = {
     registerUser,
     loginUser,
     getMe,
-    refreshToken,
-    sendResponse
+    refreshToken
 };
