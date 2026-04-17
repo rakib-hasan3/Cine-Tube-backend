@@ -26,8 +26,9 @@ const getAllUsers = async (query: Record<string, unknown>) => {
       name: true,
       email: true,
       role: true,
-      subscription: true, // ✅ নতুন যোগ করা হলো
-      planExpiresAt: true, // ✅ নতুন যোগ করা হলো
+      status: true,
+      subscription: true,
+      planExpiresAt: true,
       createdAt: true,
     },
   });
@@ -43,6 +44,7 @@ const getSingleUser = async (id: string) => {
       name: true,
       email: true,
       role: true,
+      status: true,
       subscription: true, // ✅ এটি ফ্রন্টএন্ডের 'undefined' সমস্যা দূর করবে
       planExpiresAt: true, // ✅ এটিও যোগ করে দিন
       createdAt: true,
@@ -56,7 +58,8 @@ const getSingleUser = async (id: string) => {
   return result;
 };
 
-const updateUser = async (id: string, payload: any) => {
+const updateUser = async (id: string, payload: Partial<any>) => {
+  // ১. ইউজার আছে কিনা চেক করা (এটা ঠিক আছে)
   const user = await prisma.user.findUnique({
     where: { id },
   });
@@ -65,19 +68,26 @@ const updateUser = async (id: string, payload: any) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
+  // ২. সেনসিটিভ ডাটা ফিল্টার করা
+  // পাসওয়ার্ডের পাশাপাশি ইমেইল এবং রোল আপডেট করা এখানে ব্লক করা উচিত
   if (payload.password) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Cannot update password here');
+    throw new AppError(httpStatus.BAD_REQUEST, 'Password updates require a dedicated route');
   }
+
+  // ৩. প্রটেক্টেড ফিল্ডস (ইউজার নিজে নিজে যেন এডমিন না হতে পারে)
+  // যদি এই ফাংশনটি সাধারণ ইউজার তার প্রোফাইল এডিট করার জন্য ব্যবহার করে, তবে রোল/ইমেইল বাদ দিন
+  const { role, email, ...updateData } = payload;
 
   const result = await prisma.user.update({
     where: { id },
-    data: payload,
+    data: updateData, // শুধু নিরাপদ ডাটা আপডেট হবে (যেমন: name, avatar)
     select: {
       id: true,
       name: true,
       email: true,
       role: true,
-      subscription: true, // ✅ আপডেট করার পর যাতে ফ্রন্টএন্ড নতুন স্ট্যাটাস পায়
+      status: true,
+      subscription: true,
       planExpiresAt: true,
       createdAt: true,
     },
@@ -120,6 +130,14 @@ const updateStatusIntoDB = async (id: string, payload: { status: UserStatus }) =
     data: {
       status: payload.status,
     },
+    select: { // ✅ আপডেট হওয়ার পর ফ্রন্টএন্ডকে ফ্রেশ ডাটা দিন
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    }
   });
 
   return result;

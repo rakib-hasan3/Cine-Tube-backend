@@ -3,7 +3,6 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { UserService } from './user.service';
 import { prisma } from '../../lib/prisma';
-import { UserStatus } from '../../../generated/prisma/enums';
 
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await UserService.getAllUsers(req.query);

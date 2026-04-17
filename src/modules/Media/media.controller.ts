@@ -27,6 +27,7 @@ const getSingleMedia = catchAsync(async (req, res) => {
 });
 
 const createMedia = catchAsync(async (req, res) => {
+  console.log("Request Body:", JSON.stringify(req.body, null, 2));
   const result = await MediaService.createMedia(req.body);
 
   sendResponse(res, {

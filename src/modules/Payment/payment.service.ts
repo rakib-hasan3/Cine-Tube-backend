@@ -75,47 +75,86 @@ const handleWebhook = async (sig: string, body: Buffer) => {
       config.stripe_webhook_secret as string,
     );
   } catch (err: any) {
+    console.error("❌ Webhook Signature Error:", err.message);
     throw new AppError(httpStatus.BAD_REQUEST, `Webhook Error: ${err.message}`);
   }
 
+  // ✅ Handle payment_intent.succeeded (earliest success event)
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    console.log("🔔 Payment Intent Succeeded:", paymentIntent.id);
+
+    // Find and update payment by transactionId
+    const payment = await prisma.payment.findFirst({
+      where: { transactionId: paymentIntent.id },
+    });
+
+    if (payment) {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'SUCCESS' },
+      });
+      console.log("✅ Payment status updated to SUCCESS");
+    }
+  }
+
+  // ✅ Handle checkout session completion
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { userId, subscriptionPlan } = session.metadata as any;
+    const userId = session.metadata?.userId;
+    const subscriptionPlan = session.metadata?.subscriptionPlan;
 
-    await prisma.$transaction(async (tx) => {
-      // পেমেন্ট স্ট্যাটাস সাকসেস করা
-      await tx.payment.update({
-        where: { sessionId: session.id },
-        data: { status: 'SUCCESS', transactionId: session.payment_intent as string },
-      });
+    console.log("🚀 Checkout Completed! User:", userId, "Plan:", subscriptionPlan);
 
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + 1);
+    if (!userId || !subscriptionPlan) {
+      console.error("❌ Missing userId or subscriptionPlan in metadata");
+      return { received: true };
+    }
 
-      // ইউজার এবং পারচেজ টেবিল আপডেট
-      if (subscriptionPlan) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        // ✅ Update payment by sessionId
+        const updatedPayment = await tx.payment.updateMany({
+          where: { sessionId: session.id },
+          data: {
+            status: 'SUCCESS',
+            transactionId: session.payment_intent as string,
+          },
+        });
+
+        if (updatedPayment.count === 0) {
+          console.warn("⚠️ No payment record found for sessionId:", session.id);
+        }
+
+        // ✅ Update user subscription
         await tx.user.update({
           where: { id: userId },
           data: {
-            subscription: subscriptionPlan,
-            planExpiresAt: expiryDate
-          }
+            subscription: subscriptionPlan as any,
+            planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          },
         });
 
+        // ✅ Create purchase record
         await tx.purchase.create({
           data: {
             userId,
             type: 'SUBSCRIPTION',
-            expiresAt: expiryDate,
-          }
+            subscriptionPlan: subscriptionPlan as any,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          },
         });
-      }
-    });
+
+        console.log(`✅ Subscription activated for ${userId}`);
+      });
+    } catch (err: any) {
+      console.error("❌ Transaction Error:", err.message);
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, `Webhook processing failed: ${err.message}`);
+    }
   }
 
   return { received: true };
 };
-
 export const PaymentService = {
   createCheckoutSession,
   handleWebhook,

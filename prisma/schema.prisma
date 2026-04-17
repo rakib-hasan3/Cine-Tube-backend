@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
@@ -61,6 +61,14 @@ enum UserStatus {
   blocked
 }
 
+enum Genre {
+  ACTION
+  DRAMA
+  THRILLER
+  COMEDY
+  ROMANCE
+}
+
 //models 
 
 model User {
@@ -86,12 +94,13 @@ model User {
 }
 
 model Media {
-  id          String    @id @default(uuid())
+  id          String  @id @default(uuid())
   title       String
   description String
   posterUrl   String?
   backdropUrl String?
-  genre       String[]
+  genre       Genre[]
+
   releaseYear Int
   director    String
   cast        String[]
@@ -115,8 +124,8 @@ model Review {
   rating  Int
   content String
   tags    String[]
-  spoiler Boolean
-  status  ReviewStatus @default(PENDING)
+  spoiler Boolean      @default(false)
+  status  ReviewStatus @default(APPROVED)
 
   userId  String
   mediaId String

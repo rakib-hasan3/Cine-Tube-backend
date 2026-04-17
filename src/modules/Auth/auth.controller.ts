@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { TAuthUser } from './auth.interface';
 import config from '../../config';
 import { fa } from 'zod/v4/locales';
-
+import { CookieOptions } from "express";
 const registerUser = catchAsync(async (req, res) => {
   const result = await AuthService.registerUser(req.body);
 
@@ -22,11 +22,11 @@ const loginUser = catchAsync(async (req, res) => {
   const { refreshToken, accessToken } = result;
 
   // কুকি অপশনগুলো এক জায়গায় রাখা ভালো যাতে ভুল না হয়
-  const cookieOptions = {
-    secure: config.NODE_ENV === 'production',
+  const cookieOptions: CookieOptions = {
     httpOnly: true,
-    sameSite: 'lax' as const, // এখানে lax দিলে লগআউটেও lax দিতে হবে
-    path: '/',
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   };
 
   // ১. Refresh Token সেট করা
@@ -69,20 +69,20 @@ const refreshToken = catchAsync(async (req, res) => {
   });
 });
 const logoutUser = catchAsync(async (req, res) => {
-  // একদম মিনিমাল অপশন - লোকালহোস্টের জন্য এটাই বেস্ট
-  const cookieOptions = {
+  const cookieOptions: CookieOptions = {
     httpOnly: true,
-    secure: false, // লোকালহোস্টে অবশ্যই false রাখবেন
-    path: '/',
+    secure: config.NODE_ENV === "production",
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
   };
 
-  res.clearCookie('accessToken', cookieOptions);
-  res.clearCookie('refreshToken', cookieOptions);
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("refreshToken", cookieOptions);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'Logged out successfully!',
+    message: "Logged out successfully!",
     data: null,
   });
 });

@@ -20,7 +20,12 @@ const createReview = async (payload: IReview) => {
   }
 
   const review = await prisma.review.create({
-    data: payload,
+    data: {
+      ...payload,
+      spoiler: payload?.spoiler ?? false, // ✅ FIX
+      status: "APPROVED",
+    },
+
     include: {
       user: { select: { id: true, name: true, email: true } },
       media: { select: { id: true, title: true } },
@@ -38,21 +43,50 @@ const getReviewsByMedia = async (mediaId: string, query: Record<string, unknown>
 
   const whereConditions = {
     mediaId,
-    status: 'APPROVED' as const,
+    status: 'APPROVED',
   };
 
   const [data, total] = await Promise.all([
     prisma.review.findMany({
-      where: whereConditions,
+      where: {
+        mediaId,
+
+        // 🔥 শুধু approved না, নিজের review-ও দেখাবে
+        OR: [
+          { status: "APPROVED" },
+          ...(query.userId
+            ? [{ userId: query.userId as string }]
+            : []),
+        ],
+      },
+
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
+
       include: {
-        user: { select: { id: true, name: true } },
-        _count: { select: { likes: true, comments: true } },
+        user: {
+          select: { id: true, name: true },
+        },
+
+        // 🔥 likes + comments count
+        _count: {
+          select: { likes: true, comments: true },
+        },
       },
     }),
-    prisma.review.count({ where: whereConditions }),
+
+    prisma.review.count({
+      where: {
+        mediaId,
+        OR: [
+          { status: "APPROVED" },
+          ...(query.userId
+            ? [{ userId: query.userId as string }]
+            : []),
+        ],
+      },
+    }),
   ]);
 
   return {
@@ -85,6 +119,8 @@ const updateReview = async (id: string, userId: string, payload: IReviewUpdate) 
 };
 
 // DELETE /api/v1/reviews/:id
+// D:\Assignment Type Script project\cine-tube-backend\src\modules\Review\review.service.ts
+
 const deleteReview = async (id: string, userId: string, role: string) => {
   const review = await prisma.review.findUnique({ where: { id } });
 
@@ -97,7 +133,24 @@ const deleteReview = async (id: string, userId: string, role: string) => {
     throw new AppError(httpStatus.FORBIDDEN, 'You are not allowed to delete this review');
   }
 
-  await prisma.review.delete({ where: { id } });
+  // 🔥 এখানে ট্রানজেকশন ব্যবহার করে সব রিলেটেড ডাটা ডিলিট করতে হবে
+  await prisma.$transaction(async (tx) => {
+    // ১. প্রথমে এই রিভিউর সব লাইক মুছুন
+    await tx.like.deleteMany({
+      where: { reviewId: id }
+    });
+
+    // ২. এই রিভিউর সব কমেন্ট মুছুন 
+    // (যদি কমেন্টের ভেতরে রিপ্লাই থাকে তবে সেগুলো আগে মুছতে হতে পারে, তাই Cascade ভালো)
+    await tx.comment.deleteMany({
+      where: { reviewId: id }
+    });
+
+    // ৩. সবশেষে রিভিউ মুছুন
+    await tx.review.delete({
+      where: { id }
+    });
+  });
 
   return { message: 'Review deleted successfully' };
 };
