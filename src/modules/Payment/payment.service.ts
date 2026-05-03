@@ -64,7 +64,6 @@ const createCheckoutSession = async (userId: string, payload: TCreateCheckoutSes
 
   return { checkoutUrl: session.url };
 };
-
 const handleWebhook = async (sig: string, body: Buffer) => {
   let event: Stripe.Event;
 
@@ -79,63 +78,58 @@ const handleWebhook = async (sig: string, body: Buffer) => {
     throw new AppError(httpStatus.BAD_REQUEST, `Webhook Error: ${err.message}`);
   }
 
-  // ✅ Handle payment_intent.succeeded (earliest success event)
-  if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    console.log("🔔 Payment Intent Succeeded:", paymentIntent.id);
+  console.log(`🔔 Received Webhook Event: ${event.type}`);
 
-    // Find and update payment by transactionId
-    const payment = await prisma.payment.findFirst({
-      where: { transactionId: paymentIntent.id },
-    });
-
-    if (payment) {
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: 'SUCCESS' },
-      });
-      console.log("✅ Payment status updated to SUCCESS");
-    }
-  }
-
-  // ✅ Handle checkout session completion
+  // ✅ প্রধানত checkout.session.completed ইভেন্টটি হ্যান্ডেল করছি
+  // কারণ এখান থেকেই আমরা metadata (userId, plan) এবং sessionId একসাথে পাই
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+
     const userId = session.metadata?.userId;
     const subscriptionPlan = session.metadata?.subscriptionPlan;
 
-    console.log("🚀 Checkout Completed! User:", userId, "Plan:", subscriptionPlan);
+    console.log("🚀 Processing Checkout Completion...");
+    console.log(`User: ${userId}, Plan: ${subscriptionPlan}, SessionID: ${session.id}`);
 
     if (!userId || !subscriptionPlan) {
-      console.error("❌ Missing userId or subscriptionPlan in metadata");
+      console.error("❌ Missing userId or subscriptionPlan in metadata. Fulfillment skipped.");
       return { received: true };
     }
 
     try {
+      // ✅ Atomic Transaction: পেমেন্ট আপডেট এবং সাবস্ক্রিপশন অ্যাক্টিভেশন একসাথে হবে
       await prisma.$transaction(async (tx) => {
-        // ✅ Update payment by sessionId
+        console.log("Stripe Session Data:", {
+          id: session.id,
+          user: session.metadata?.userId,
+          plan: session.metadata?.subscriptionPlan
+        });
+        // ১. পেমেন্ট রেকর্ড আপডেট (sessionId ধরে)
+        // এখানে transactionId হিসেবে session.payment_intent সেভ করছি
         const updatedPayment = await tx.payment.updateMany({
           where: { sessionId: session.id },
           data: {
-            status: 'SUCCESS',
+            status: 'SUCCESS', // আপনার এনাম অনুযায়ী
             transactionId: session.payment_intent as string,
           },
         });
+        console.log("👉 Record found and updated:", updatedPayment.count);
 
         if (updatedPayment.count === 0) {
-          console.warn("⚠️ No payment record found for sessionId:", session.id);
+          console.warn("⚠️ No pending payment record found for this sessionId in DB.");
+          // অনেক সময় আগে পেমেন্ট ক্রিয়েট না হলেও আমরা এখানে নতুন রেকর্ড ক্রিয়েট করতে পারি
         }
 
-        // ✅ Update user subscription
+        // ২. ইউজারের সাবস্ক্রিপশন স্ট্যাটাস আপডেট
         await tx.user.update({
           where: { id: userId },
           data: {
             subscription: subscriptionPlan as any,
-            planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ৩০ দিন মেয়াদ
           },
         });
 
-        // ✅ Create purchase record
+        // ৩. পারচেজ (Purchase) হিস্টোরিতে এন্ট্রি যোগ করা
         await tx.purchase.create({
           data: {
             userId,
@@ -145,12 +139,25 @@ const handleWebhook = async (sig: string, body: Buffer) => {
           },
         });
 
-        console.log(`✅ Subscription activated for ${userId}`);
+        console.log(`✅ Success: User ${userId} is now on ${subscriptionPlan} plan.`);
+      }, {
+        timeout: 10000 // ট্রানজ্যাকশন টাইমআউট ১০ সেকেন্ড (সেফটির জন্য)
       });
     } catch (err: any) {
-      console.error("❌ Transaction Error:", err.message);
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, `Webhook processing failed: ${err.message}`);
+      console.error("❌ DB Transaction Error:", err.message);
+      // এখানে এরর থ্রো করলে স্ট্রাইপ আবার ট্রাই (Retry) করবে, যা ভালো।
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, `Webhook DB Error: ${err.message}`);
     }
+  }
+
+  // পেমেন্ট ফেইল করলে আপনি চাইলে 'checkout.session.expired' বা 'payment_intent.payment_failed' হ্যান্ডেল করতে পারেন
+  if (event.type === 'checkout.session.expired') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    await prisma.payment.updateMany({
+      where: { sessionId: session.id },
+      data: { status: 'FAILED' }
+    });
+    console.log("❌ Session Expired: Payment status set to FAILED");
   }
 
   return { received: true };

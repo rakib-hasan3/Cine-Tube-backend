@@ -1,13 +1,14 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { Client } from 'pg';
 
+// .env ফাইল লোড করার চেষ্টা (যদি কাজ করে)
 dotenv.config({ path: path.join(process.cwd(), '.env') });
-console.log("Loaded CLIENT_URL:", process.env.CLIENT_URL);
+
 export default {
   NODE_ENV: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
-  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000', bcrypt_salt_rounds: Number(process.env.BCRYPT_SALT_ROUND),
+  CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
+  bcrypt_salt_rounds: Number(process.env.BCRYPT_SALT_ROUND),
   stripe_secret_key: process.env.STRIPE_SECRET_KEY,
   stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
   database_url: process.env.DATABASE_URL,
@@ -16,4 +17,6 @@ export default {
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET,
   jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN,
 
+  // সরাসরি কী বসিয়ে দাও (এভাবে দিলে .env এর ওপর নির্ভর করতে হবে না)
+  gemini_api_key: "AIzaSyC93OmzomdC8cx5LxduOmDX0GCB2KDIDaw",
 };

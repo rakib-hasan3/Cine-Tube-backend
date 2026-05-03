@@ -18,6 +18,7 @@ import { WatchlistRoutes } from '../modules/Watchlist/watchlist.route';
 import { PurchaseRoutes } from '../modules/Purchase/purchase.route';
 import { PaymentRoutes } from '../modules/Payment/payment.route';
 import { AdminRoutes } from '../modules/Admin/admin.route';
+import { AiRoutes } from '../modules/Ai/ai.route';
 
 
 const moduleRoutes: TModuleRoutes[] = [
@@ -60,6 +61,10 @@ const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/payments',
         route: PaymentRoutes,
+    },
+    {
+        path: '/ai',
+        route: AiRoutes,
     },
 ];
 
