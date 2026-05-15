@@ -1,9 +1,9 @@
 import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import { getHybridChatResponse } from './ai.service';
+import { getAiChatResponse } from './ai.service';
 
-const hybridChat = catchAsync(async (req, res) => {
+const cineTubeChat = catchAsync(async (req, res) => {
   const { movieId, userId, message } = req.body;
 
   if (!movieId || !message) {
@@ -15,7 +15,7 @@ const hybridChat = catchAsync(async (req, res) => {
     });
   }
 
-  const result = await getHybridChatResponse(movieId, userId, message);
+  const result = await getAiChatResponse(movieId, userId, message);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -26,5 +26,5 @@ const hybridChat = catchAsync(async (req, res) => {
 });
 
 export const AiController = {
-  hybridChat,
+  cineTubeChat,
 };

@@ -3,6 +3,6 @@ import { AiController } from './ai.controller';
 
 const router = Router();
 
-router.post('/hybrid-chat', AiController.hybridChat);
+router.post('/cinetube-chat', AiController.cineTubeChat);
 
 export const AiRoutes = router;

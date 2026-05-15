@@ -90,6 +90,8 @@ model User {
   likes    Like[]
   comments Comment[]
   payments Payment[]
+  continueWatching ContinueWatching[]
+
   status   UserStatus @default(active)
 }
 
@@ -112,11 +114,13 @@ model Media {
   createdAt   DateTime  @default(now())
   isDeleted   Boolean   @default(false)
   deletedAt   DateTime?
+  duration    Float?    // Added for frontend consistency
 
   reviews   Review[]
   watchlist Watchlist[]
   purchases Purchase[]
   payments  Payment[]
+  continueWatching ContinueWatching[]
 }
 
 model Review {
@@ -221,4 +225,19 @@ model SystemSetting {
   allowRegistration Boolean  @default(true)
   premiumMonthlyFee Float    @default(0) // যদি সাবস্ক্রিপশন ফি কন্ট্রোল করতে চান
   updatedAt         DateTime @updatedAt
+}
+
+model ContinueWatching {
+  id          String   @id @default(uuid())
+  userId      String
+  movieId     String
+  currentTime Float
+  duration    Float
+  progress    Float // percentage (0–100)
+  updatedAt   DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  media Media @relation(fields: [movieId], references: [id])
+
+  @@unique([userId, movieId])
 }

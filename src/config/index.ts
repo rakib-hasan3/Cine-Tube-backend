@@ -19,4 +19,8 @@ export default {
 
   // সরাসরি কী বসিয়ে দাও (এভাবে দিলে .env এর ওপর নির্ভর করতে হবে না)
   gemini_api_key: "AIzaSyC93OmzomdC8cx5LxduOmDX0GCB2KDIDaw",
+
+  // Email Config
+  email_user: process.env.EMAIL_USER,
+  email_pass: process.env.EMAIL_PASS,
 };

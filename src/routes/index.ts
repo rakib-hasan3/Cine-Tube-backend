@@ -19,6 +19,9 @@ import { PurchaseRoutes } from '../modules/Purchase/purchase.route';
 import { PaymentRoutes } from '../modules/Payment/payment.route';
 import { AdminRoutes } from '../modules/Admin/admin.route';
 import { AiRoutes } from '../modules/Ai/ai.route';
+import { ContinueWatchingRoutes } from '../modules/ContinueWatching/continueWatching.route';
+import { ContactRoutes } from '../modules/Contact/contact.route';
+import { NewsletterRoutes } from '../modules/Newsletter/newsletter.route';
 
 
 const moduleRoutes: TModuleRoutes[] = [
@@ -43,7 +46,7 @@ const moduleRoutes: TModuleRoutes[] = [
         route: ReviewRoutes,
     },
     {
-        path: '/reviews',
+        path: '/likes',
         route: LikeRoutes,
     },
     {
@@ -65,6 +68,18 @@ const moduleRoutes: TModuleRoutes[] = [
     {
         path: '/ai',
         route: AiRoutes,
+    },
+    {
+        path: '/continue-watching',
+        route: ContinueWatchingRoutes,
+    },
+    {
+        path: '/contact',
+        route: ContactRoutes,
+    },
+    {
+        path: '/newsletter',
+        route: NewsletterRoutes,
     },
 ];
 
